@@ -17,6 +17,11 @@ class Application:
 
 
 
+class UserInfo(BaseModel):
+    ...
+
+
+
 class DiscordToken(BaseModel):
     access_token: str
     token_type: str
@@ -51,7 +56,7 @@ class Endpoint:
         return f"https://discord.com/api/oauth2/authorize?{urlencode(params)}"
 
 
-    def get_access_token(self, code: str) -> DiscordToken:
+    def exchange(self, code: str) -> DiscordToken:
         data = {
             "client_id": self.app.id,
             "client_secret": self.app.secret,
@@ -62,7 +67,7 @@ class Endpoint:
 
         response = self.app.client.post(
             "https://discord.com/api/oauth2/token",
-            data=data
+            data=data,
         )
         response.raise_for_status()
         return DiscordToken.model_validate(response.json())
