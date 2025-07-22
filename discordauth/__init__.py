@@ -18,7 +18,24 @@ class Application:
 
 
 class UserInfo(BaseModel):
-    ...
+    id: str
+    username: str
+    avatar: str | None
+    discriminator: str
+    public_flags: int
+    flags: int
+    banner: str | None
+    accent_color: int | None
+    global_name: str | None
+    mfa_enabled: bool
+    locale: str | None
+    premium_type: int
+
+    @property
+    def avatar_url(self) -> str | None:
+        if self.avatar:
+            return f"https://cdn.discordapp.com/avatars/{self.id}/{self.avatar}.png"
+        return None
 
 
 
@@ -73,7 +90,7 @@ class Endpoint:
         return DiscordToken.model_validate(response.json())
     
 
-    def get_user(self, token: DiscordToken) -> dict:
+    def get_user(self, token: DiscordToken) -> UserInfo:
         headers = {
             "Authorization": f"Bearer {token.access_token}"
         }
@@ -83,4 +100,4 @@ class Endpoint:
             headers=headers
         )
         response.raise_for_status()
-        return response.json()
+        return UserInfo.model_validate(response.json())
