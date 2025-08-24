@@ -37,6 +37,12 @@ class UserInfo(BaseModel):
             return f"https://cdn.discordapp.com/avatars/{self.id}/{self.avatar}.png"
         return None
 
+    @property
+    def banner_url(self) -> str | None:
+        if self.banner:
+            return f"https://cdn.discordapp.com/banners/{self.id}/{self.banner}.png"
+        return None
+
 
 
 class DiscordToken(BaseModel):
