@@ -1,7 +1,7 @@
 [project]
 name = "discordauth"
 version = "0.1.0"
-description = ""
+description = "A simple Discord oauth2 library easy to use."
 authors = [
     {name = "Izak",email = "frdev.izak@gmail.com"}
 ]
