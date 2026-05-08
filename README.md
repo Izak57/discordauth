@@ -38,13 +38,32 @@ print(user.username, user.avatar_url)
 
 Represents your Discord application. Pass it to `Endpoint` to authorize users.
 
-| Attribute | Type  | Description                    |
-|-----------|-------|--------------------------------|
-| `id`      | `str` | Your Discord application's client ID     |
-| `secret`  | `str` | Your Discord application's client secret |
+| Attribute     | Type            | Description                                               |
+|---------------|-----------------|-----------------------------------------------------------|
+| `id`          | `str`           | Your Discord application's client ID                      |
+| `secret`      | `str`           | Your Discord application's client secret                  |
+| `bot_token`   | `str \| None`   | Optional bot token, required for `join_guild`             |
 
 ```python
+# Basic usage (OAuth2 only)
 app = Application(id="123456789", secret="abc123secret")
+
+# With bot token (enables join_guild)
+app = Application(id="123456789", secret="abc123secret", bot_token="your.bot.token.here")
+```
+
+**Methods**
+
+| Method                                              | Returns | Description                                                         |
+|-----------------------------------------------------|---------|---------------------------------------------------------------------|
+| `join_guild(guild_id, user_id, access_token)`       | `None`  | Adds a user to a guild. `guild_id` is `int`; `user_id` is `int \| str`. Requires `bot_token` and the `guilds.join` OAuth2 scope. |
+
+```python
+# After the user authorizes with the "guilds.join" scope:
+token = endpoint.exchange(code="AUTH_CODE")
+user  = get_user(token)
+
+app.join_guild(guild_id=123456789, user_id=user.id, access_token=token)
 ```
 
 ---
@@ -227,6 +246,38 @@ def callback(code: str):
         "scopes": token.scopes,
     }
 ```
+
+---
+
+## Ideas to Make the Module Easier to Use & FastAPI Compatible
+
+### 1. Async support (`AsyncApplication` / async methods)
+Add an `AsyncApplication` class (or `async` variants of `exchange`, `get_user`, `join_guild`) backed by `httpx.AsyncClient`. FastAPI is fully async, so avoiding `asyncio.run()` / thread-pool workarounds matters a lot for performance.
+
+### 2. FastAPI dependency helpers
+Provide ready-made FastAPI `Depends`-compatible callables, e.g.:
+
+```python
+from discordauth.fastapi import DiscordUser
+
+@router.get("/me")
+async def me(user: UserInfo = Depends(DiscordUser(endpoint))):
+    return user
+```
+
+### 3. `state` parameter & CSRF protection
+Add an optional `state` parameter to `Endpoint.url` and a `verify_state()` helper so developers can protect their OAuth2 flow against CSRF with minimal boilerplate.
+
+### 4. Token storage / session helpers
+Ship a thin wrapper that stores `DiscordToken` in an HTTP-only cookie (or a FastAPI `Request`'s session), with automatic refresh when expired, so callers never touch raw tokens.
+
+### 5. Guild membership helpers
+Build on `join_guild` with complementary utilities:
+- `get_guilds(token)` – list guilds the user is in.
+- `is_member(guild_id, user_id)` – check membership without trying to add.
+
+### 6. Pydantic `Application` model / settings integration
+Make `Application` a Pydantic `BaseSettings` subclass so credentials can be loaded automatically from environment variables (`DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `DISCORD_BOT_TOKEN`), which is the standard FastAPI/12-factor pattern.
 
 ---
 
