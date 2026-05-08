@@ -15,10 +15,40 @@ def http_client() -> Client:
 
 class Application:
 
-    def __init__(self, id: str, secret: str) -> None:
+    def __init__(self, id: str, secret: str, bot_token: Optional[str] = None) -> None:
         self.id = id
         self.secret = secret
+        self.bot_token = bot_token
         self.client = http_client()
+
+    def join_guild(
+        self,
+        guild_id: int,
+        user_id: int | str,
+        access_token: "str | DiscordToken",
+        httpclient: Client | None = None,
+    ) -> None:
+        """Add a user to a guild using the bot token.
+
+        Requires the ``guilds.join`` scope to have been granted by the user.
+        Raises ``ValueError`` if no ``bot_token`` was provided to the Application.
+        """
+        if self.bot_token is None:
+            raise ValueError("bot_token is required to call join_guild")
+
+        if httpclient is None:
+            httpclient = self.client
+
+        if isinstance(access_token, DiscordToken):
+            access_token = access_token.access_token
+
+        response = httpclient.put(
+            f"https://discord.com/api/v10/guilds/{guild_id}/members/{user_id}",
+            headers={"Authorization": f"Bot {self.bot_token}"},
+            json={"access_token": access_token},
+        )
+
+        response.raise_for_status()
 
 
 class UserInfo(BaseModel):
